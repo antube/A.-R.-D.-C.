@@ -1,6 +1,6 @@
 import bluetooth
 
-def Write_Blue(command_direction, command_time):
+def write_blue(command_direction, command_time):
 	client_sock = None
 	
 	data = 'icommand,' + str(0) + ',' + str(1)+';'
@@ -20,7 +20,10 @@ def Write_Blue(command_direction, command_time):
 		
 		print (serial_line)
 
-def Bluetooth_connect(target_name, port):
+def blue_list_activation():
+	pass
+
+def bluetooth_connect(target_name, port):
 	
 	nearby_devices = bluetooth.discover_devices()
 
@@ -30,7 +33,7 @@ def Bluetooth_connect(target_name, port):
 			break
 
 	if target_address is not None:
-		print("found target bluetooth device with address ", target_address)
+		print("found target bluetooth device with address", target_address)
 	else:
 		print("could not find target bluetooth device nearby")
 		

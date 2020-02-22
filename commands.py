@@ -1,5 +1,5 @@
-from usb import Write_USB
-from blutooth import Write_Blue, Bluetooth_connect
+from usb import write_usb, usb_list_activation
+from blutooth import bluetooth_connect, write_blue, blue_list_activation
 from os.path import exists
 from serial import Serial
 from help import help
@@ -7,171 +7,116 @@ from test import *
 from extras import Arduino_List_Write
 
 def Command_Parser(_input, debug):
-	CMD = ""
-	Arguments = []
-	ON_CMD = True
-	argument = ""
-    
-	for i in _input:
-		if ON_CMD and i == " ":
-			ON_CMD = False
-		elif ON_CMD:
-			CMD += i
-		elif not ON_CMD and i == " ":
-			Arguments.append(argument)
-			argument = ""
-		elif not ON_CMD:
-			argument += i
+	commands = _input.split()
 	
+	for command in commands:
+		command = command.lower() 
+
 	if debug:
-		Command_Test_Print(CMD, Arguments)
+		Command_Test_Print(commands[0], commands[1:])
 
-	Command_Recognizer(CMD, Arguments, debug)
+	Command_Recognizer(commands[0], commands[1:], debug)
 
-def Command_Recognizer(CMD, Arguments, debug):
+def Command_Recognizer(command, arguments, debug):
 	command_direction = []
 	command_time = []
+
+	direction = {"forward" : 1, "backward" : 2, "left" : 3, "right" : 4, "stop" : 0}
 
 	####################################################
 	# RUN Command ######################################
 	####################################################
-	if CMD.lower() == "run":
-		if len(Arguments) > 0:
-			if Arguments[0].lower() == "/u":
-				Write_USB(command_direction, command_time)
-			elif Arguments[0].lower() == "/b":
-				Write_Blue(command_direction, command_time)
-			elif Arguments[0].lower() == "ls":
-				if exists('/dev/ttyACM0'):
-					serUSB = Serial('/dev/ttyACM0')
-					serUSB.baudrate = 9600
-					#serial_read = serUSB.readline()
-					data = 'icommand,5;'
-					serUSB.write(data.encode())
-				elif exists('/dev/tty.usbserial'):
-					serUSB = Serial('/dev/tty.usbserial')
-					serUSB.baudrate = 9600
-					#serial_read = serUSB.readline()
-					data = 'icommand,5;'
-					serUSB.write(data.encode())
+	if command == "run":
+		if len(arguments) == 2 or len(arguments) == 4:
+			# 0 = USB  : Single Command
+			# 1 = USB  : Program Command List
+			# 2 = USB  : Robot Command List
+			# 3 = Blue : Single Command
+			# 4 = Blue : Program Command List
+			# 5 = Blue : Robot Command List
+
+			communication_methods = {"-u" : 0, "-b" : 3}
+			command_method = {"-s" : 0, "-d" : 1, "-l" : 2}
+
+			run = {
+				0 : write_usb,
+				1 : write_usb,
+				2 : usb_list_activation,
+				3 : write_blue,
+				4 : write_blue,
+				5 : blue_list_activation
+			}
+
+			result = communication_methods[arguments[0]] + command_method[arguments[1]]
+
+			if debug:
+				print("Communication Method", str(communication_methods[arguments[0]]))
+				print("Command Method", str(command_method[arguments[1]]))
+				print("Result", str(result))
+				print("Run",run[result])
+
+			if(result == 0 or result == 3):
+				run[result](direction.setdefault(arguments[2], "stop"), arguments[3])
+			elif (result == 1 or result == 4):
+				run[result](command_direction, command_time)
 			else:
-				if exists('/dev/ttyACM0'):
-					serUSB = Serial('/dev/ttyACM0')
-					serUSB.baudrate = 9600
-					#serial_read = serUSB.readline()
-					if Arguments[0].lower() == "/l":
-						data = 'icommand,' + str(5) + ';'
-					else:
-						data = 'icommand,' + Arguments[0] + ',' + Arguments[1] +';'
-						serUSB.write(data.encode())
+				run[result]()
 
-					print ("Running")
-				elif exists('/dev/tty.usbserial'):
-					serUSB = Serial('/dev/tty.usbserial')
-					serUSB.baudrate = 9600
-					if Arguments[0].lower() == "/l":
-						data = 'icommand,' + str(5) + ';'
-					else:
-						data = 'icommand,' + Arguments[0] + ',' + Arguments[1] +';'
-						serUSB.write(data.encode())
-
-					print ("Running")
-				else:
-					print ("Sorry No Arduino Connected")
 		else:
-			print ("Beginning Run")
-			Write_USB(command_direction, command_time)
-			print ("Done Run")
+			print("No communication method specified")
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# ADD Command ######################################
 	####################################################
-	elif CMD.lower() == "add":
-		if len(Arguments) > 0:
-			if Arguments[0].lower() == "/i":
+	elif command == "add":
+		if len(arguments) > 0:
+			if arguments[0] == "-i":
 				#Checks to see what direction the user told the Robot to travel
-				if Arguments[2].lower() == "forward":
-					command_direction.append(1, Arguments[1])
-				elif Arguments[2].lower() == "backward":
-					command_direction.append(2, Arguments[1])
-				elif Arguments[2].lower() == "left":
-					command_direction.append(3, Arguments[1])
-				elif Arguments[2].lower() == "right":
-					command_direction.append(4, Arguments[1])
-				else:
-					command_direction.append(0, Arguments[1])
-				command_time.append(Arguments[3])
-			elif Arguments[0].lower() == "/e":
+				command_direction.append(direction.setdefault(arguments[2], "stop"), arguments[1])
+				command_time.append(arguments[3])
+			elif arguments[0] == "-e":
 				#Checks to see what direction the user told the Robot to travel
-				if Arguments[1].lower() == "forward":
-					command_direction.append(1)
-				elif Arguments[1].lower() == "backward":
-					command_direction.append(2)
-				elif Arguments[1].lower() == "left":
-					command_direction.append(3)
-				elif Arguments[1].lower() == "right":
-					command_direction.append(4)
-				else:
-					command_direction.append(0)
-
-				command_time.append(Arguments[1])
+				command_direction.append(direction.setdefault(arguments[1], "stop"))
+				command_time.append(arguments[2])
 			else:
-				if Arguments[0].lower() == "forward":
-					command_direction.append(1)
-				elif Arguments[0].lower() == "backward":
-					command_direction.append(2)
-				elif Arguments[0].lower() == "left":
-					command_direction.append(3)
-				elif Arguments[0].lower() == "right":
-					command_direction.append(4)
-				else:
-					command_direction.append(0)
-
-				command_time.append(Arguments[1])
+				command_direction.append(direction.setdefault(arguments[0], "stop"))
+				command_time.append(arguments[1])
 		else:
-			print ("This Command takes Arguments")
+			print ("This Command takes arguments")
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# LIST Command #####################################
 	####################################################
-	elif CMD.lower() == "ls":
+	elif command == "ls":
 		index = 0
 		while index < len(command_direction):
-			print ("  "+str(index)+' Direct:'+str(command_direction[index])+' Time:'+str(command_time[index]))
+			print ("  " + str(index) + ' Direct:' + str(command_direction[index]) + ' Time:' + str(command_time[index]))
 			index += 1
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# CHANGE Command ###################################
 	####################################################
-	elif CMD.lower() == "ch":
-		if len(Arguments) > 0:
-			if Arguments[1].lower() == "forward":
-				command_direction[int(Arguments[0])] = 1
-			elif Arguments[1].lower() == "backward":
-				command_direction[int(Arguments[0])] = 2
-			elif Arguments[1].lower() == "left":
-				command_direction[int(Arguments[0])] = 3
-			elif Arguments[1].lower() == "right":
-				command_direction[int(Arguments[0])] = 4
-			else:
-				command_direction[int(Arguments[0])] = 0
-			command_time[int(Arguments[0])] = Arguments[2]
+	elif command == "ch":
+		if len(arguments) > 0:
+			command_direction[int(arguments[0])] = direction.setdefault(arguments[1], "stop")
+
+			command_time[int(arguments[0])] = arguments[2]
 		else:
-			print ("Sorry")
+			print ("Sorry No arguments specified")
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# REMOVE Command ###################################
 	####################################################
-	elif CMD.lower() == "rm":
-		if len(Arguments) > 0 and len(Arguments) < 2:
-			del(command_direction[int(Arguments[0])])
-			del(command_time[int(Arguments[0])])
-		elif len(Arguments) > 1:
-			if Arguments[0] == "/a":
+	elif command == "rm":
+		if len(arguments) > 0 and len(arguments) < 2:
+			del(command_direction[int(arguments[0])])
+			del(command_time[int(arguments[0])])
+		elif len(arguments) > 1:
+			if arguments[0] == "-a":
 				del(command_direction[:])
 				del(command_time[:])
 		else:
@@ -181,32 +126,40 @@ def Command_Recognizer(CMD, Arguments, debug):
 	####################################################
 	# WRITE Command ####################################
 	####################################################
-	elif CMD.lower() == "write":
-		Arduino_List_Write(command_direction, command_time, Arguments)
+	elif command == "write":
+		Arduino_List_Write(command_direction, command_time, arguments)
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# Bluetooth Connect Command ########################
 	####################################################
-	elif CMD.lower() == "blco":
-		Bluetooth_connect(input("Device Name: "), 1)
+	elif command == "blco":
+		bluetooth_connect(input("Device Name: "), 1)
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# HELP Command #####################################
 	####################################################
-	elif CMD.lower() == "help":
-		help(Arguments)
+	elif command == "help":
+		help(arguments)
 	#///////////////////////////////////////////////////
 	
 	####################################################
 	# Debug ############################################
 	####################################################
-	elif CMD.lower() == "debug":
+	elif command == "debug":
 		if debug == False:
 			debug = True
 		else:
 			debug = False
 	#///////////////////////////////////////////////////
+
+	####################################################
+	# Exit #############################################
+	####################################################
+	elif command == "exit":
+		exit()
+	#///////////////////////////////////////////////////
+
 	else:
 		print ("Unrecognized Command")

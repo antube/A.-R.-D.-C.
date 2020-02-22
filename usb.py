@@ -1,7 +1,7 @@
 from serial import Serial
 from os.path import exists
 
-def Write_USB(command_direction, command_time):
+def write_usb(command_direction, command_time):
     #Arduino Uno
     if exists('/dev/ttyACM0'):
         serUSB = Serial('/dev/ttyACM0')
@@ -36,3 +36,17 @@ def Write_USB(command_direction, command_time):
             print (serial_line)
     else:
         print ("Sorry No Arduino Connected")
+
+def usb_list_activation():
+    if exists('/dev/ttyACM0'):
+        serUSB = Serial('/dev/ttyACM0')
+        serUSB.baudrate = 9600
+        #serial_read = serUSB.readline()
+        data = 'icommand,5;'
+        serUSB.write(data.encode())
+    elif exists('/dev/tty.usbserial'):
+        serUSB = Serial('/dev/tty.usbserial')
+        serUSB.baudrate = 9600
+        #serial_read = serUSB.readline()
+        data = 'icommand,5;'
+        serUSB.write(data.encode())

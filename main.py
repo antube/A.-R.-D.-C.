@@ -2,7 +2,7 @@
 
 from commands import Command_Parser
 
-debug = False
+debug = True
 
 while True:
     Full_Command = input("~$ ")
