@@ -1,25 +1,48 @@
+#Imports
 from usb import write_usb, usb_list_activation
-from blutooth import bluetooth_connect, write_blue, blue_list_activation
-from os.path import exists
-from serial import Serial
+from blutooth import write_blue, blue_list_activation, bluetooth_connect
 from help import help
 from test import *
-from extras import Arduino_List_Write
+from extras import arduino_list_write
 
-def Command_Parser(_input, debug):
+#################################
+# command_parser
+# parameters
+#     _input : string  : input from terminal
+#      debug : boolean : debug variable
+#
+# return
+#     None
+##################################
+def command_parser(_input, instructions, debug):
+	#split the input into its individual parts
 	commands = _input.split()
 	
+	#loop through all elements in list commands
 	for command in commands:
+		#set element contained within command to lower
 		command = command.lower() 
 
+	#if debug variable is set to true
 	if debug:
-		Command_Test_Print(commands[0], commands[1:])
+		#call command_test_print with arguments of first elementof command list and rest of command list
+		command_test_print(commands[0], commands[1:])
 
-	Command_Recognizer(commands[0], commands[1:], debug)
+	#call command recognizer with arguments of first element of command list, rest of command list, and debug variable
+	command_recognizer(commands[0], commands[1:], instructions, debug)
 
-def Command_Recognizer(command, arguments, debug):
-	command_direction = []
-	command_time = []
+
+##########################################################
+# command_recognizer
+# parameters
+#     command   : single : string  : main command
+#     arguments : list   : string  : arguments for command
+#     debug     : signle : boolean : debug variable
+#
+# return
+#     None
+###########################################################
+def command_recognizer(command, arguments, instructions, debug):
 
 	direction = {"forward" : 1, "backward" : 2, "left" : 3, "right" : 4, "stop" : 0}
 
@@ -56,9 +79,9 @@ def Command_Recognizer(command, arguments, debug):
 				print("Run",run[result])
 
 			if(result == 0 or result == 3):
-				run[result](direction.setdefault(arguments[2], "stop"), arguments[3])
+				run[result](direction.setdefault(arguments[2], 0), arguments[3])
 			elif (result == 1 or result == 4):
-				run[result](command_direction, command_time)
+				run[result](instructions)
 			else:
 				run[result]()
 
@@ -71,17 +94,19 @@ def Command_Recognizer(command, arguments, debug):
 	####################################################
 	elif command == "add":
 		if len(arguments) > 0:
-			if arguments[0] == "-i":
-				#Checks to see what direction the user told the Robot to travel
-				command_direction.append(direction.setdefault(arguments[2], "stop"), arguments[1])
-				command_time.append(arguments[3])
-			elif arguments[0] == "-e":
-				#Checks to see what direction the user told the Robot to travel
-				command_direction.append(direction.setdefault(arguments[1], "stop"))
-				command_time.append(arguments[2])
+			instruction = []
+
+			starts = {"-s" : 0, "-e" : 1, "-i" : 2}
+
+			start = starts.setdefault(arguments[0], 0)
+
+			instruction.append(direction.setdefault(arguments[start], 0))
+			instruction.append(int(arguments[start + 1]))
+
+			if start == 2:
+				instructions.append(instruction, int(arguments[1]))
 			else:
-				command_direction.append(direction.setdefault(arguments[0], "stop"))
-				command_time.append(arguments[1])
+				instructions.append(instruction)
 		else:
 			print ("This Command takes arguments")
 	#///////////////////////////////////////////////////
@@ -91,8 +116,8 @@ def Command_Recognizer(command, arguments, debug):
 	####################################################
 	elif command == "ls":
 		index = 0
-		while index < len(command_direction):
-			print ("  " + str(index) + ' Direct:' + str(command_direction[index]) + ' Time:' + str(command_time[index]))
+		while index < len(instructions):
+			print ("  " + str(index) + " Direct:" + str(instructions[index][0]) + " Time:" + str(instructions[index][1]))
 			index += 1
 	#///////////////////////////////////////////////////
 	
@@ -101,9 +126,9 @@ def Command_Recognizer(command, arguments, debug):
 	####################################################
 	elif command == "ch":
 		if len(arguments) > 0:
-			command_direction[int(arguments[0])] = direction.setdefault(arguments[1], "stop")
+			instructions[int(arguments[0])][0] = direction.setdefault(arguments[1], 0)
 
-			command_time[int(arguments[0])] = arguments[2]
+			instructions[int(arguments[0])][1] = arguments[2]
 		else:
 			print ("Sorry No arguments specified")
 	#///////////////////////////////////////////////////
@@ -112,22 +137,21 @@ def Command_Recognizer(command, arguments, debug):
 	# REMOVE Command ###################################
 	####################################################
 	elif command == "rm":
-		if len(arguments) > 0 and len(arguments) < 2:
-			del(command_direction[int(arguments[0])])
-			del(command_time[int(arguments[0])])
-		elif len(arguments) > 1:
+		if len(arguments) > 0:
 			if arguments[0] == "-a":
-				del(command_direction[:])
-				del(command_time[:])
+				instructions = instructions[:]
+			else:
+				instructions = instructions.remove(int(arguments[0]))
+
 		else:
-			print ("Sorry")
+			print ("REQUIRES ARGUMENTS")
 	#///////////////////////////////////////////////////
 			
 	####################################################
 	# WRITE Command ####################################
 	####################################################
 	elif command == "write":
-		Arduino_List_Write(command_direction, command_time, arguments)
+		arduino_list_write(instructions, arguments)
 	#///////////////////////////////////////////////////
 	
 	####################################################
@@ -163,3 +187,5 @@ def Command_Recognizer(command, arguments, debug):
 
 	else:
 		print ("Unrecognized Command")
+
+

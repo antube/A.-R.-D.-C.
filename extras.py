@@ -1,15 +1,15 @@
 from serial import Serial
 from os.path import exists
 
-def Arduino_List_Write(command_direction, command_time, Arguments):
+def arduino_list_write(instructions, Arguments):
     serial_line = ""
     index = 0
 
     if len(Arguments) > 0:
         print("Hello: Write Test")
         multiplier = 0
-        command_length = int(command_time[index])
-        command = int(command_direction[index])
+        command_length = int(instructions[index][1])
+        command = int(instructions[index][0])
         print("command 1: " + hex(int(command)))
         
         command = command << 5
@@ -33,19 +33,19 @@ def Arduino_List_Write(command_direction, command_time, Arguments):
         print('Command: ' + hex(int(command)))
         print('Num: ' + hex(int(command_length)))
         print('Multiplier: ' + hex(multiplier))
-        print('Length: ' + hex(int(command_time[index])))
+        print('Length: ' + hex(int(instructions[index][1])))
     else:
         serUSB = Serial('/dev/ttyACM0')
         if exists('/dev/tty.usbserial'):
             serUSB = Serial('/dev/tty.usbserial')
         serial_line = serUSB.readline()
         serial_line.decode()
-        while True or index >= len(command_time):
+        while True or index >= len(instructions):
             if serial_line[0] == '2' and serial_line[2] == '5' or index == 0:
                 print("Writing")
                 multiplier = 0
-                command_length = int(command_time[index])
-                num = int(command_direction[index])
+                command_length = int(instructions[index][1])
+                num = int(instructions[index][0])
                 num << 13
                 if command_length >= 40960 and command_length < 409600:
                     command_length /= 10
@@ -59,7 +59,7 @@ def Arduino_List_Write(command_direction, command_time, Arguments):
                 print(data)
                 serUSB.write(data.encode())
                 index += 1
-            elif serial_line[0] == '2' and serial_line[2] == '6' or index >= len(command_time):
+            elif serial_line[0] == '2' and serial_line[2] == '6' or index >= len(instructions):
                 break
             serial_line = serUSB.read()
             serial_line.decode()

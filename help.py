@@ -53,7 +53,7 @@ def help(Arguments):
             print ("\nOutput")
             print ("  [Index] [Direction] [Time]")
         elif Arguments[0] == "rm":
-            print ("Takes one argument")
+            print ("Takes 1 argument")
             print ("    -a : CLEARS LIST : CAUTION")
             print ("     i : index       : Removes a command at a specified index")
             print("")

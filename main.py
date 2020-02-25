@@ -1,10 +1,11 @@
 #! /usr/bin/env python3
 
-from commands import Command_Parser
+#import command_parser from commands file
+from commands import command_parser
 
-debug = True
+instructions = []
 
+#Create 1 infinite loop
 while True:
-    Full_Command = input("~$ ")
-    Full_Command += " "
-    Command_Parser(Full_Command, debug)
+    #Call command_parser and pass in input from terminal and set debug to True
+    command_parser(input("~$"), instructions, False)

@@ -1,4 +1,4 @@
-def Command_Test_Print(CMD, Arguments):
+def command_test_print(CMD, Arguments):
     counter = 1
     print ("Command: { " + CMD + " }")
     for argument in Arguments:
