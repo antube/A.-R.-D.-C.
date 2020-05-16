@@ -1,4 +1,4 @@
-def help(Arguments):
+def commandHelp(Arguments):
     if len(Arguments) > 0:
         print("\n### Argument Syntax ###")
         print("  Postion of arguments is important")
